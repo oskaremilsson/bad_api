@@ -23,8 +23,7 @@ class S(BaseHTTPRequestHandler):
         path = os.path.abspath(__file__)
         fileName = scr_name = os.path.basename(__file__)
         path = path.replace(fileName, "")
-
-        f = open(path + "/index.html")
+        f = open(path + "index.html")
         self._set_headers('text/html')
         self.wfile.write(f.read())
         
@@ -36,18 +35,22 @@ class S(BaseHTTPRequestHandler):
         scriptName = parameters["type"]
         content = re.sub('\|(?!\|)' , '', parameters["content"])
         content = re.escape(content)
-        try:
-            path = os.path.abspath(__file__)
-            fileName = scr_name = os.path.basename(__file__)
-            path = path.replace(fileName, "")
-            proc = subprocess.Popen(["python3 %s/bad_scripts/%s/%s.py %s" % (path, scriptName, scriptName, content)], stdout=subprocess.PIPE, shell=True)
-            (output, err) = proc.communicate()
+        if (scriptName == 'revcalc') or (scriptName == 'pwdgen') or (scriptName == 'spellcheck'):
+            self._set_headers('text/plain')
+            self.wfile.write("Sorry, the api does not support this script")
+        else :
+            try:
+                path = os.path.abspath(__file__)
+                fileName = scr_name = os.path.basename(__file__)
+                path = path.replace(fileName, "")
+                proc = subprocess.Popen(["python3 %sbad_scripts/%s/%s.py %s" % (path, scriptName, scriptName, content)], stdout=subprocess.PIPE, shell=True)
+                (output, err) = proc.communicate()
 
-            self._set_headers('text/plain')
-            self.wfile.write(output)
-        except Exception:
-            self._set_headers('text/plain')
-            self.wfile.write("Error")
+                self._set_headers('text/plain')
+                self.wfile.write(output)
+            except Exception:
+                self._set_headers('text/plain')
+                self.wfile.write("Error")
         
 def run(server_class=HTTPServer, handler_class=S, port=80):
     server_address = ('', port)
