@@ -36,7 +36,6 @@ class S(BaseHTTPRequestHandler):
         scriptName = parameters["type"]
         content = re.sub('\|(?!\|)' , '', parameters["content"])
         content = re.escape(content)
-        print type(content)
         try:
             path = os.path.abspath(__file__)
             fileName = scr_name = os.path.basename(__file__)
