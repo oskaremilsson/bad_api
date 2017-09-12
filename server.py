@@ -6,9 +6,9 @@ import subprocess
 import re
 
 class S(BaseHTTPRequestHandler):
-    def _set_headers(self):
+    def _set_headers(self, content):
         self.send_response(200)
-        self.send_header('Content-type', 'text/html')
+        self.send_header('Content-type', content)
         self.end_headers()
     
     def qs_to_dict(self, qs):
@@ -20,7 +20,7 @@ class S(BaseHTTPRequestHandler):
 
     def do_GET(self):
         f = open("./index.html")
-        self._set_headers()
+        self._set_headers('text/html')
         self.wfile.write(f.read())
         
     def do_POST(self):
@@ -35,10 +35,10 @@ class S(BaseHTTPRequestHandler):
             proc = subprocess.Popen(["python3 bad_scripts/%s/%s.py %s" % (scriptName, scriptName, content)], stdout=subprocess.PIPE, shell=True)
             (output, err) = proc.communicate()
 
-            self._set_headers()
+            self._set_headers('text/plain')
             self.wfile.write(output)
         except Exception:
-            self._set_headers()
+            self._set_headers('text/plain')
             self.wfile.write("Error")
         
 def run(server_class=HTTPServer, handler_class=S, port=80):
