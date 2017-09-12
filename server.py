@@ -4,6 +4,7 @@ import SocketServer
 from urlparse import urlparse, parse_qs
 import subprocess
 import re
+import os
 
 class S(BaseHTTPRequestHandler):
     def _set_headers(self, content):
@@ -19,7 +20,11 @@ class S(BaseHTTPRequestHandler):
         return final_dict
 
     def do_GET(self):
-        f = open("./index.html")
+        path = os.path.abspath(__file__)
+        fileName = scr_name = os.path.basename(__file__)
+        path = path.replace(fileName, "")
+
+        f = open(path + "/index.html")
         self._set_headers('text/html')
         self.wfile.write(f.read())
         
@@ -31,8 +36,12 @@ class S(BaseHTTPRequestHandler):
         scriptName = parameters["type"]
         content = re.sub('\|(?!\|)' , '', parameters["content"])
         content = re.escape(content)
+        print type(content)
         try:
-            proc = subprocess.Popen(["python3 bad_scripts/%s/%s.py %s" % (scriptName, scriptName, content)], stdout=subprocess.PIPE, shell=True)
+            path = os.path.abspath(__file__)
+            fileName = scr_name = os.path.basename(__file__)
+            path = path.replace(fileName, "")
+            proc = subprocess.Popen(["python3 %s/bad_scripts/%s/%s.py %s" % (path, scriptName, scriptName, content)], stdout=subprocess.PIPE, shell=True)
             (output, err) = proc.communicate()
 
             self._set_headers('text/plain')
