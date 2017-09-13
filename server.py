@@ -5,6 +5,7 @@ from urlparse import urlparse, parse_qs
 import subprocess
 import re
 import os
+import urllib
 
 class S(BaseHTTPRequestHandler):
     def _set_headers(self, content):
@@ -33,7 +34,8 @@ class S(BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length) 
         parameters = self.qs_to_dict(post_data)
         scriptName = parameters["type"]
-        content = re.sub('\|(?!\|)' , '', parameters["content"])
+        content = urllib.unquote(parameters["content"]).decode('utf8') 
+        content = re.sub('\|(?!\|)' , '', content)
         content = re.escape(content)
         if (scriptName == 'revcalc') or (scriptName == 'pwdgen') or (scriptName == 'spellcheck'):
             self._set_headers('text/plain')
