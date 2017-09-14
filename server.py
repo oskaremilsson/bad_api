@@ -6,6 +6,11 @@ import subprocess
 import re
 import os
 import urllib
+import requests
+import json
+
+memeUsername = ""
+memePassword = ""
 
 class S(BaseHTTPRequestHandler):
     def _set_headers(self, content):
@@ -35,6 +40,8 @@ class S(BaseHTTPRequestHandler):
         self.wfile.write(f.read())
         
     def do_POST(self):
+        global memeUsername
+        global memePassword
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length) 
         parameters = self.qs_to_dict(post_data)
@@ -43,7 +50,36 @@ class S(BaseHTTPRequestHandler):
         content = urllib.unquote(parameters["content"]).decode('utf8') 
         content = re.sub('\|(?!\|)' , '', content)
         content = re.escape(content)
-        if (scriptName == 'revcalc') or (scriptName == 'pwdgen') or (scriptName == 'spellcheck'):
+
+        if scriptName == 'spongebobmeme':
+            try:
+                """
+                path = os.path.abspath(__file__)
+                fileName = scr_name = os.path.basename(__file__)
+                path = path.replace(fileName, "")
+                proc = subprocess.Popen(["python3 %sbad_scripts/spongebob/spongebob.py %s" % (path, content)], stdout=subprocess.PIPE, shell=True)
+                (output, err) = proc.communicate()
+                """
+
+                #call imgflip and return the link
+                output = content
+                url     = 'https://api.imgflip.com/caption_image'
+                payload = { 'template_id' : '103662437',
+                            'username' : memeUsername,
+                            'password' : memePassword,
+                            'text0' : '',
+                            'text1' : output
+                            }
+                headers = {}
+                res = requests.post(url, data=payload, headers=headers)
+                test = json.loads(res.text)
+                self._set_headers('text/plain')
+                self.wfile.write(test['data']['url'])
+            except Exception:
+                self._set_headers('text/plain')
+                self.wfile.write("Error")
+
+        elif (scriptName == 'revcalc') or (scriptName == 'pwdgen') or (scriptName == 'spellcheck'):
             self._set_headers('text/plain')
             self.wfile.write("Sorry, the api does not support this script")
         else :
@@ -60,7 +96,11 @@ class S(BaseHTTPRequestHandler):
                 self._set_headers('text/plain')
                 self.wfile.write("Error")
         
-def run(server_class=HTTPServer, handler_class=S, port=80):
+def run(server_class=HTTPServer, handler_class=S, port=80, username="", password=""):
+    global memeUsername
+    global memePassword
+    memeUsername = username
+    memePassword = password
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     print ('Starting httpd...')
@@ -71,5 +111,9 @@ if __name__ == "__main__":
 
     if len(argv) == 2:
         run(port=int(argv[1]))
+    elif len(argv) == 3:
+        run(username=argv[2], password=argv[3])
+    elif len(argv) == 4:
+        run(port=int(argv[1]), username=argv[2], password=argv[3])
     else:
         run()
