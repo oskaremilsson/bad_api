@@ -12,9 +12,15 @@ class S(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', content)
         self.end_headers()
+
+    def checkLegacy(self, qs):
+        # support old versions where ? was expected in beginning
+        if qs[0] == "?":
+            qs = qs.split("?")[1]
+        return qs
     
     def qs_to_dict(self, qs):
-        qs = qs.split("?")[1]
+        qs = self.checkLegacy(qs)
         final_dict = dict()
         for item in qs.split("&"):
             final_dict[item.split("=")[0]] = item.split("=")[1]
@@ -29,11 +35,11 @@ class S(BaseHTTPRequestHandler):
         self.wfile.write(f.read())
         
     def do_POST(self):
-        # Doesn't do anything with posted data
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length) 
         parameters = self.qs_to_dict(post_data)
-        scriptName = parameters["type"]
+        scriptName = urllib.unquote(parameters["type"]).decode('utf8')
+        scriptName = re.escape(scriptName)
         content = urllib.unquote(parameters["content"]).decode('utf8') 
         content = re.sub('\|(?!\|)' , '', content)
         content = re.escape(content)
