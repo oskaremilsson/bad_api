@@ -31,6 +31,25 @@ class S(BaseHTTPRequestHandler):
             final_dict[item.split("=")[0]] = item.split("=")[1]
         return final_dict
 
+    def makeMeme(self, id, top, bottom):
+        #call imgflip and return the link
+        try:
+            global memeUsername
+            global memePassword
+            url     = 'https://api.imgflip.com/caption_image'
+            payload = { 'template_id' : id,
+                        'username' : memeUsername,
+                        'password' : memePassword,
+                        'text0' : top,
+                        'text1' : bottom
+                        }
+            headers = {}
+            res = requests.post(url, data=payload, headers=headers)
+            data = json.loads(res.text)
+            return data['data']['url']
+        except Exception:
+            return 'Could not create meme'
+
     def do_GET(self):
         path = os.path.abspath(__file__)
         fileName = scr_name = os.path.basename(__file__)
@@ -40,44 +59,35 @@ class S(BaseHTTPRequestHandler):
         self.wfile.write(f.read())
         
     def do_POST(self):
-        global memeUsername
-        global memePassword
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length) 
         parameters = self.qs_to_dict(post_data)
-        scriptName = urllib.unquote(parameters["type"]).decode('utf8')
-        scriptName = re.escape(scriptName)
-        content = urllib.unquote(parameters["content"]).decode('utf8') 
-        content = re.sub('\|(?!\|)' , '', content)
-        content = re.escape(content)
+
+        try:
+            scriptName = urllib.unquote(parameters["type"]).decode('utf8')
+            scriptName = re.escape(scriptName)
+            content = urllib.unquote(parameters["content"]).decode('utf8')
+            content = re.escape(content)
+        except Exception:
+            self._set_headers('text/plain')
+            self.wfile.write("Missing argument")
+            return 
 
         if scriptName == 'spongebobmeme':
+            url = self.makeMeme(103662437, '', content)
+            self._set_headers('text/plain')
+            self.wfile.write(url)
+        
+        elif scriptName == 'achievementmeme':
             try:
-                """
-                path = os.path.abspath(__file__)
-                fileName = scr_name = os.path.basename(__file__)
-                path = path.replace(fileName, "")
-                proc = subprocess.Popen(["python3 %sbad_scripts/spongebob/spongebob.py %s" % (path, content)], stdout=subprocess.PIPE, shell=True)
-                (output, err) = proc.communicate()
-                """
-
-                #call imgflip and return the link
-                output = content
-                url     = 'https://api.imgflip.com/caption_image'
-                payload = { 'template_id' : '103662437',
-                            'username' : memeUsername,
-                            'password' : memePassword,
-                            'text0' : '',
-                            'text1' : output
-                            }
-                headers = {}
-                res = requests.post(url, data=payload, headers=headers)
-                test = json.loads(res.text)
+                title = urllib.unquote(parameters["title"]).decode('utf8')
+                title = re.escape(title)
+                url = self.makeMeme(3227693, title, content)
                 self._set_headers('text/plain')
-                self.wfile.write(test['data']['url'])
+                self.wfile.write(url)
             except Exception:
                 self._set_headers('text/plain')
-                self.wfile.write("Error")
+                self.wfile.write("Missing title")
 
         elif (scriptName == 'revcalc') or (scriptName == 'pwdgen') or (scriptName == 'spellcheck'):
             self._set_headers('text/plain')
